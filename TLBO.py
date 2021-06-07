@@ -16,26 +16,6 @@ import time
 
 #-------------------------------- DÉFINITION DES ÉLÉMENTS DE BASE -----------------------------------
 
-#Notation des variables 
-
-# α Maximum additional sales price from product promotion ($)
-# β Additional sales price and promotional expense elasticity
-# γ Scale parameter used in defining the relationship between the additional sales price and product promotional expense
-# A Ordering cost per order ($ per order)
-# B Promotional budget ($)
-# C Annual purchasing cost ($/year)
-# H Annual holding cost ($/year)
-# O Annual ordering cost ($/year)
-# P Realizable selling price per unit before promotion ($/unit)
-# Q Lot size (units)
-# R Annual revenue ($/year)
-# T Cycle time in year (year)
-# D(P) Annual demand at selling price P without any promotion (units/year)
-# Cp Unit purchasing cost ($)
-# hr Holding cost per monetary unit for a year for the product ($/$-year)
-# ρ(B) Additional realizable selling price per unit as a function of expense (B) on product promotion ($)
-# Tp Annual profit ($)
-
 #Définition des variables globales
 
 A = 1000
@@ -103,8 +83,6 @@ def profit_indiv(individu : float, demande : DemandeFunc, rho : RhoFunc):
     rho_func = rho(B)
     
     Q = T*D
-    # if T == 0 :
-    #     print("raté", i, T)
     O = A/T
     C = Cp*D
     H = (hr*Cp*Q)/2 
@@ -161,12 +139,14 @@ def teacher_phase(pop : float, profit : float, demande : DemandeFunc, rho : RhoF
 def learning_phase(pop : float, profit : float, demande : DemandeFunc, rho : RhoFunc):
     size = len(pop)
     
+    #Mise à jour de la population
     for i in range(size):
         ri = uniform(0, 1)
         j = randint(0, size - 1)
         while j == i:
             j = randint(0, size - 1)
         
+        #On garde l'individu si son nouveau profit est bon
         if profit[i] < profit[j]:
             new_P = pop[i][0] + ri*(pop[i][0] - pop[j][0])
             if new_P < 170:
@@ -262,10 +242,13 @@ def TLBO(nb_individu : int, nb_generation : int, demande : DemandeFunc, rho : Rh
     
     return best_individu[0], best_individu[1], best_individu[2], best_profit, iteration_opt, fin
 
-TEST24 = TLBO(5000, 100, demande_2, rho_niche)
+resultat = TLBO(100, 100, demande_2, rho_niche)
 
 ############################################ Sensitivity Analysis ###################################
 import openpyxl as op
+
+#Les différentes fonctions fonctionnent avec un fichier DATA.xlsx créé préalablement avec les feuilles correspondantes à
+# chaque fonction déjà créées
 
 def sensibility_time_TLBO_ind(debut : int, fin : int, pas : int, demande : DemandeFunc, rho : RhoFunc):
     result = []
@@ -327,6 +310,36 @@ def gap_tlbo(nb_individu : int, nb_gen : int, nb_rep : int):
     fichier.save("DATA.xlsx")
     return
 
-b = sensibility_time_TLBO_gen(50, 1050, 50, demande_2, rho_niche)
+def iter_opt_tlbo():
+    func_dem = [demande_1, demande_2, demande_3]
+    position = 0
+    
+    result = []
+    
+    for i, dem in enumerate(func_dem):
+        print(dem)
+        for f, gen in enumerate([50, 100, 250, 500]):
+            print("Génération : ",gen)
+            for j in range(50, 550, 50):
+                print("Individu : ",j)
+                for k in range(10):
+                    temp = TLBO(j, gen, dem, rho_niche)
+                    result.append([i + 1, gen, j, temp[3]])
+    
+    fichier = op.load_workbook("DATA.xlsx")
+    sheet = fichier['GAP OPT TLBO']
+    for i in range(len(result)):
+        sheet.cell(1 + i, 1).value = result[i][0]
+        sheet.cell(1 + i, 2).value = result[i][1]
+        sheet.cell(1 + i, 3).value = result[i][2]
+        sheet.cell(1 + i, 4).value = result[i][3]
+        
+    
+    fichier.save("DATA.xlsx")
+    
+    return
+
+# d = iter_opt_tlbo()
+# b = sensibility_time_TLBO_gen(50, 1050, 50, demande_2, rho_niche)
 # c = gap_tlbo(100, 100, 1000)
-a = sensibility_time_TLBO_ind(50, 1050, 50, demande_2, rho_niche)
+# a = sensibility_time_TLBO_ind(50, 1050, 50, demande_2, rho_niche)

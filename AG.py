@@ -16,27 +16,6 @@ from math import *
 import time
 
 #-------------------------------- DÉFINITION DES ÉLÉMENTS DE BASE -----------------------------------
-
-#Notation des variables 
-
-# α Maximum additional sales price from product promotion ($)
-# β Additional sales price and promotional expense elasticity
-# γ Scale parameter used in defining the relationship between the additional sales price and product promotional expense
-# A Ordering cost per order ($ per order)
-# B Promotional budget ($)
-# C Annual purchasing cost ($/year)
-# H Annual holding cost ($/year)
-# O Annual ordering cost ($/year)
-# P Realizable selling price per unit before promotion ($/unit)
-# Q Lot size (units)
-# R Annual revenue ($/year)
-# T Cycle time in year (year)
-# D(P) Annual demand at selling price P without any promotion (units/year)
-# Cp Unit purchasing cost ($)
-# hr Holding cost per monetary unit for a year for the product ($/$-year)
-# ρ(B) Additional realizable selling price per unit as a function of expense (B) on product promotion ($)
-# Tp Annual profit ($)
-
 #Définition des variables globales
 
 A = 1000
@@ -99,12 +78,12 @@ def profit_annuel(population : float, demande : DemandeFunc, rho : RhoFunc) -> f
     
     return profit
 
-# INITIALISATION
+######################################## INITIALISATION ########################################
 
 def initialisation (taille : int):  # definition de la fonction d'initialisation
     return [[uniform(170, 270), uniform(2**(-53), 1), uniform(0, 15000)] for i in range(taille)] # initiation de la population
 
-# SELECTION
+######################################## SELECTION ########################################
 
 def selection (population : float, taille : int, profit : float):
     
@@ -123,7 +102,7 @@ def selection (population : float, taille : int, profit : float):
     
     return new_pop
 
-# MUTATION
+######################################## MUTATION ########################################
 
 def mutation (population : float, taille : int): # definition de la fonction de mutation
     new_pop = []
@@ -135,7 +114,7 @@ def mutation (population : float, taille : int): # definition de la fonction de 
             
     return new_pop
 
-# CROSSOVER
+######################################## CROSSOVER ########################################
 
 def crossover (population : float, taille : int):  # definition de la fonction crossover
 
@@ -160,7 +139,7 @@ def crossover (population : float, taille : int):  # definition de la fonction c
             
     return enfants
 
-# AG
+######################################## AG ########################################
 
 def AG(nb_individu : int, nb_evolution : int, demande : DemandeFunc, rho : RhoFunc):
     
@@ -212,23 +191,26 @@ def AG(nb_individu : int, nb_evolution : int, demande : DemandeFunc, rho : RhoFu
     fin = time.process_time() - debut
     # solution = [list(best_individu), best_profit, "Solution trouvée à " + str(find_best)]
     
-    # print("\n")
-    # print("La solution a été trouvée au bout de : ", temps_find, " secondes")
-    # print("L'évolution a été réalisée en : ", fin, " secondes")
-    # print("\n")
-    # print("Prix choisi : ", round(best_individu[0], 2), " €")
-    # print("Périodicité choisi : ", round(best_individu[1], 2))
-    # print("Budget choisi : ", round(best_individu[2], 2), " €")
-    # print("\n")
-    # print("Profit maximal : ", round(best_profit, 2), " €")
+    print("\n")
+    print("La solution a été trouvée au bout de : ", temps_find, " secondes")
+    print("L'évolution a été réalisée en : ", fin, " secondes")
+    print("\n")
+    print("Prix choisi : ", round(best_individu[0], 2), " €")
+    print("Périodicité choisi : ", round(best_individu[1], 2))
+    print("Budget choisi : ", round(best_individu[2], 2), " €")
+    print("\n")
+    print("Profit maximal : ", round(best_profit, 2), " €")
     
     return best_individu[0], best_individu[1], best_individu[2], best_profit, iteration_opt, fin
 
-# test = AG(100, 100, demande_2, rho_niche)
+resultat = AG(100, 100, demande_2, rho_niche)
 
 ############################################ Sensitivity Analysis ###################################
 import openpyxl as op
 
+#Les différentes fonctions fonctionnent avec un fichier DATA.xlsx créé préalablement avec les feuilles correspondantes à
+# chaque fonction déjà créées
+# Permet de récupérer les données de temps d'exécution en faisant varier le nombre d'individus
 def sensibility_time_AG_ind(debut : int, fin : int, pas : int, demande : DemandeFunc, rho : RhoFunc):
     result = []
     for i in range(debut, fin, pas):
@@ -245,6 +227,7 @@ def sensibility_time_AG_ind(debut : int, fin : int, pas : int, demande : Demande
     
     return result
 
+# Permet de récupérer les données de temps d'exécution en faisant varier le nombre de générations
 def sensibility_time_AG_gen(debut : int, fin : int, pas : int, demande : DemandeFunc, rho : RhoFunc):
     result = []
     for i in range(debut, fin, pas):
@@ -261,6 +244,7 @@ def sensibility_time_AG_gen(debut : int, fin : int, pas : int, demande : Demande
     
     return result
 
+# Permet d'exécuter n instances de chaque combinaison de scénarios possibles
 def gap_ag(nb_individu : int, nb_gen : int, nb_rep : int):
     result = np.array([[0]*54]*nb_rep, float)
     func_dem = [demande_1, demande_2, demande_3]
@@ -289,8 +273,38 @@ def gap_ag(nb_individu : int, nb_gen : int, nb_rep : int):
     fichier.save("DATA.xlsx")
     return
 
-a = sensibility_time_AG_ind(50, 1050, 50, demande_2, rho_niche)
-b = sensibility_time_AG_gen(50, 1050, 50, demande_2, rho_niche)
+def iter_opt_AG():
+    func_dem = [demande_1, demande_2, demande_3]
+    position = 0
+    
+    result = []
+    print("ca c'est AG")
+    for i, dem in enumerate(func_dem):
+        print(dem)
+        for f, gen in enumerate([50, 100, 250, 500]):
+            print("Génération : ",gen)
+            for j in range(50, 550, 50):
+                print("Individu : ",j)
+                for k in range(10):
+                    temp = AG(j, gen, dem, rho_niche)
+                    result.append([i + 1, gen, j, temp[3]])
+    
+    fichier = op.load_workbook("DATA.xlsx")
+    sheet = fichier['GAP OPT AG']
+    for i in range(len(result)):
+        sheet.cell(1 + i, 1).value = result[i][0]
+        sheet.cell(1 + i, 2).value = result[i][1]
+        sheet.cell(1 + i, 3).value = result[i][2]
+        sheet.cell(1 + i, 4).value = result[i][3]
+        
+    
+    fichier.save("DATA.xlsx")
+    
+    return 0
+
+# h = iter_opt_AG()
+# a = sensibility_time_AG_ind(50, 1050, 50, demande_2, rho_niche)
+# b = sensibility_time_AG_gen(50, 1050, 50, demande_2, rho_niche)
 # c = gap_ag(100, 100, 1000)
 
         
